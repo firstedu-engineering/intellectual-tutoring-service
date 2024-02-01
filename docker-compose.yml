@@ -1,0 +1,23 @@
+version: '3.7'
+
+services:
+  server:
+    image: tinkerpop/gremlin-server:3.6
+    restart: always
+    platform: linux/x86_64
+    ports:
+      - "8182:8182"
+    volumes:
+      - tinkerpop_data_container:/data
+  console:
+    image: tinkerpop/gremlin-console:3.6
+    command: "-i conf/remote.groovy"
+    volumes:
+      - ./gremlin-console:/opt/gremlin-console/conf
+    depends_on:
+      - server
+    links:
+      - "server:server.host"
+
+volumes:
+  tinkerpop_data_container:
