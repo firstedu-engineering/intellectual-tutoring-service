@@ -1,4 +1,4 @@
-# intellectua-tutoring-system
+# intellectual-tutoring-system
 
 ## Local env
 connect to local graph databse console:
