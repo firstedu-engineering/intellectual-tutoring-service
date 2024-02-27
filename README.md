@@ -1,7 +1,7 @@
 # intellectual-tutoring-system
 
 ## Local env
-connect to local graph databse console:
+connect to local graph database console:
 ```
 docker-compose run console
 ```

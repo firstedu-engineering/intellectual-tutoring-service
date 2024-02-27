@@ -1,11 +1,11 @@
-package com.firsteducation.marsladder.intellectuatutoringservice
+package com.firsteducation.marsladder.its
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class IntellectuaTutoringServiceApplication
+class Application
 
 fun main(args: Array<String>) {
-	runApplication<IntellectuaTutoringServiceApplication>(*args)
+	runApplication<Application>(*args)
 }

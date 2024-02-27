@@ -1,10 +1,10 @@
-package com.firsteducation.marsladder.intellectuatutoringservice
+package com.firsteducation.marsladder.its
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 
 @SpringBootTest
-class IntellectuaTutoringServiceApplicationTests {
+class ApplicationTests {
 
 	@Test
 	fun contextLoads() {

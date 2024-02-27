@@ -1,1 +1,1 @@
-rootProject.name = "intellectua-tutoring-service"
+rootProject.name = "intellectual-tutoring-service"
