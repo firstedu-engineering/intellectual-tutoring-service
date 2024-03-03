@@ -19,5 +19,14 @@ services:
     links:
       - "server:server.host"
 
+  db:
+    image: mysql:8.0
+    ports:
+      - "8806:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+      - MYSQL_DATABASE=its
+    command: mysqld --default-authentication-plugin=mysql_native_password
+
 volumes:
   tinkerpop_data_container:
