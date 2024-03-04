@@ -12,12 +12,12 @@ content1 = g.addV('knowledge').property('type', 'content').property('name', 'Car
 content2 = g.addV('knowledge').property('type', 'content').property('name', 'Mid-point formula').next()
 content3 = g.addV('knowledge').property('type', 'content').property('name', 'Distance formula').next()
 
-sub_content1 = g.addV('knowledge').property('id', '30ead49e-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Order pairs').next()
-sub_content2 = g.addV('knowledge').property('id', '33c3ce55-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Cartesian plane').next()
-sub_content3 = g.addV('knowledge').property('id', '376c104a-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Applications of ordered pairs').next()
-sub_content4 = g.addV('knowledge').property('id', '3acdd521-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Plotting coordinates on Cartesian planes').next()
-sub_content5 = g.addV('knowledge').property('id', '3e1b93b2-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Mid-point').next()
-sub_content6 = g.addV('knowledge').property('id', '425e99d9-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Distance between two points').next()
+sub_content1 = g.addV('knowledge').property('id', '8a025838-da0a-11ee-83b6-0242ac130002').property('outline_id', '30ead49e-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Order pairs').next()
+sub_content2 = g.addV('knowledge').property('id', '8f76bca3-da0a-11ee-83b6-0242ac130002').property('outline_id', '33c3ce55-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Cartesian plane').next()
+sub_content3 = g.addV('knowledge').property('id', '9391171d-da0a-11ee-83b6-0242ac130002').property('outline_id', '376c104a-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Applications of ordered pairs').next()
+sub_content4 = g.addV('knowledge').property('id', '9955b8e8-da0a-11ee-83b6-0242ac130002').property('outline_id', '3acdd521-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Plotting coordinates on Cartesian planes').next()
+sub_content5 = g.addV('knowledge').property('id', 'a295161a-da0a-11ee-83b6-0242ac130002').property('outline_id', '3e1b93b2-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Mid-point').next()
+sub_content6 = g.addV('knowledge').property('id', 'b17d8595-da0a-11ee-83b6-0242ac130002').property('outline_id', '425e99d9-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Distance between two points').next()
 
 
 g.addE('contains').from(topic).to(sub_topic).next()
