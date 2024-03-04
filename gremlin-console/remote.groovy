@@ -4,7 +4,7 @@
 //Remove any existing data to allow this to be rerun
 g.V().drop().iterate()
 
-student = g.addV('student').property('name', 'Yang Fan').next()
+student = g.addV('student').property('id', '29895382-d9da-11ee-bc41-0242ac190004').property('name', 'Yang Fan').next()
 
 topic = g.addV('knowledge').property('type', 'topic').property('name', 'Linear Relationships').next()
 sub_topic = g.addV('knowledge').property('type', 'sub_topic').property('name', 'Basic Concepts of Cartesian Coordinate System').next()
@@ -12,12 +12,12 @@ content1 = g.addV('knowledge').property('type', 'content').property('name', 'Car
 content2 = g.addV('knowledge').property('type', 'content').property('name', 'Mid-point formula').next()
 content3 = g.addV('knowledge').property('type', 'content').property('name', 'Distance formula').next()
 
-sub_content1 = g.addV('knowledge').property('type', 'sub_content').property('name', 'Order pairs').next()
-sub_content2 = g.addV('knowledge').property('type', 'sub_content').property('name', 'Cartesian plane').next()
-sub_content3 = g.addV('knowledge').property('type', 'sub_content').property('name', 'Applications of ordered pairs').next()
-sub_content4 = g.addV('knowledge').property('type', 'sub_content').property('name', 'Plotting coordinates on Cartesian planes').next()
-sub_content5 = g.addV('knowledge').property('type', 'sub_content').property('name', 'Mid-point').next()
-sub_content6 = g.addV('knowledge').property('type', 'sub_content').property('name', 'Distance between two points').next()
+sub_content1 = g.addV('knowledge').property('id', '30ead49e-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Order pairs').next()
+sub_content2 = g.addV('knowledge').property('id', '33c3ce55-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Cartesian plane').next()
+sub_content3 = g.addV('knowledge').property('id', '376c104a-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Applications of ordered pairs').next()
+sub_content4 = g.addV('knowledge').property('id', '3acdd521-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Plotting coordinates on Cartesian planes').next()
+sub_content5 = g.addV('knowledge').property('id', '3e1b93b2-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Mid-point').next()
+sub_content6 = g.addV('knowledge').property('id', '425e99d9-d9dc-11ee-bc41-0242ac190004').property('type', 'sub_content').property('name', 'Distance between two points').next()
 
 
 g.addE('contains').from(topic).to(sub_topic).next()

@@ -8,6 +8,10 @@ import org.springframework.stereotype.Service
 
 @Service
 class Service {
+    private val initScore = 1.5
+    private val targetScore = 2
+    private val baseScore = 1
+
     fun getFocus(): String? {
         val cluster = connectToDatabase()
         println("Using cluster connection: $cluster")
@@ -16,6 +20,10 @@ class Service {
 
         val focus = g.V().has("student", "name", "Yang Fan").out("focus").valueMap<String>().toList()
         return focus.toString()
+    }
+
+    fun initKnowledgeAbility(studentId: String) {
+
     }
 
     private fun connectToDatabase(): Cluster {
