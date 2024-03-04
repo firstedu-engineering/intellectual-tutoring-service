@@ -22,8 +22,9 @@ class Controller(private val service: Service) {
     @PostMapping("init-knowledge-ability/{studentId}")
     fun initKnowledgeAbility(
         @PathVariable studentId: String,
-    ): ResponseEntity<Void> {
-        return service.initKnowledgeAbility(studentId)
+    ): ResponseEntity<String> {
+        service.initKnowledgeAbility(studentId)
+        return ResponseEntity.ok().build()
     }
 
     @GetMapping("question")
