@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface StudentKnowledgeAbilityRepository : JpaRepository<StudentKnowledgeAbilityEntity, String> {
     fun deleteByStudentId(studentId: String): List<StudentKnowledgeAbilityEntity>
-    fun findByStudentIdAndSubContentId(studentId: String, subContentId: String): StudentKnowledgeAbilityEntity
+    fun findByStudentIdAndSubContentId(studentId: String, subContentId: String): StudentKnowledgeAbilityEntity?
 }

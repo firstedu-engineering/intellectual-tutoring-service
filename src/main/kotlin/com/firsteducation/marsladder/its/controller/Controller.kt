@@ -1,21 +1,21 @@
 package com.firsteducation.marsladder.its.controller
 
-import com.firsteducation.marsladder.its.controller.dto.QuestionResponse
+import com.firsteducation.marsladder.its.controller.dto.PracticeResponse
+import com.firsteducation.marsladder.its.controller.dto.SubmitPracticeRequest
 import com.firsteducation.marsladder.its.service.Service
 import com.firsteducation.marsladder.its.service.domain.KnowledgePoint
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 class Controller(private val service: Service) {
+    private val studentId = "29895382-d9da-11ee-bc41-0242ac190004"
+
     @GetMapping("focus")
     fun getFocus(): ResponseEntity<KnowledgePoint> {
         return ResponseEntity.status(HttpStatus.OK).body(
-            service.getFocus(),
+            service.getFocus(studentId),
         )
     }
 
@@ -27,15 +27,17 @@ class Controller(private val service: Service) {
         return ResponseEntity.ok().build()
     }
 
-    @GetMapping("question")
-    fun generateQuestion(): ResponseEntity<QuestionResponse> {
-        val question = service.getQuestion()
+    @GetMapping("practice")
+    fun practice(): ResponseEntity<PracticeResponse> {
+        val practice = service.getPractice(studentId)
         return ResponseEntity.status(HttpStatus.OK).body(
-            QuestionResponse(
-                questionId = question.questionId,
-                subContentId = question.subContentId,
-                reason = question.reason,
-            ),
+            PracticeResponse.from(practice)
         )
+    }
+
+    @PostMapping("submit-practice")
+    fun submitPractice(@RequestBody submitPracticeRequest: SubmitPracticeRequest): ResponseEntity<Void> {
+        service.submitPractice(studentId = studentId, practiceId = submitPracticeRequest.practiceId, optionId = submitPracticeRequest.optionId)
+        return ResponseEntity.ok().build()
     }
 }

@@ -3,11 +3,13 @@ package com.firsteducation.marsladder.its.repository.entity
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.GenericGenerator
+import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.annotations.UpdateTimestamp
+import org.hibernate.type.SqlTypes
 import java.time.LocalDateTime
 
-@Entity(name = "student_practice_history")
-data class StudentPracticeHistoryEntity(
+@Entity(name = "student_practice")
+data class StudentPracticeEntity(
     @Id
     @GeneratedValue(generator = "uuid")
     @GenericGenerator(name = "uuid", strategy = "uuid2")
@@ -15,9 +17,22 @@ data class StudentPracticeHistoryEntity(
     val studentId: String,
     val subContentId: String,
     val questionId: String,
-    val correct: Int,
+    val questionBody: String,
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "json")
+    val questionOptions: List<QuestionOption>,
+    var questionSelectedOptionId: String? = null,
+    var questionCorrect: Boolean? = null,
+    var questionSubmitted: Boolean = false,
+    val questionRecommendedReason: String,
     @CreationTimestamp
     val createdAt: LocalDateTime? = null,
     @UpdateTimestamp
     val updatedAt: LocalDateTime? = null,
+)
+
+data class QuestionOption(
+    val id: String,
+    val value: String,
+    val correct: Boolean,
 )
