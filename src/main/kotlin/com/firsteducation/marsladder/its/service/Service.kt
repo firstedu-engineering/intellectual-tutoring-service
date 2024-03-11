@@ -1,6 +1,7 @@
 package com.firsteducation.marsladder.its.service
 
 import com.firsteducation.marsladder.its.client.QuestionServiceClient
+import com.firsteducation.marsladder.its.client.domain.Question
 import com.firsteducation.marsladder.its.event.PracticeSubmittedEvent
 import com.firsteducation.marsladder.its.exception.BadRequestException
 import com.firsteducation.marsladder.its.repository.StudentKnowledgeAbilityAdjustmentDetailRepository
@@ -51,35 +52,56 @@ class Service(
     fun getPractice(studentId: String): Practice {
         val focus = getFocus(studentId)
         val latestPracticeEntity = studentPracticeRepository.findFirstByStudentIdAndSubContentIdOrderByCreatedAtDesc(studentId, focus.id)
-        if (latestPracticeEntity == null || latestPracticeEntity.questionSubmitted) {
+        if (latestPracticeEntity != null && !latestPracticeEntity.questionSubmitted) {
+            return Practice.from(latestPracticeEntity)
+        } else {
             val knowledgeAbilityEntity = studentKnowledgeAbilityRepository.findByStudentIdAndSubContentId(studentId, focus.id)
                 ?: throw PracticeException("Student $studentId has no knowledge ability for sub_content: ${focus.name}")
-            if (knowledgeAbilityEntity.currentScore >= knowledgeAbilityEntity.targetScore ) {
-                throw PracticeException("The current ability score ${knowledgeAbilityEntity.currentScore} is greater than or equals to the target ability score ${knowledgeAbilityEntity.targetScore}.")
-            } else {
-                //当上述难度范围无法抽取时，扩展范围至X+1
-                val minDifficulty = knowledgeAbilityEntity.currentScore
-                val maxDifficulty = knowledgeAbilityEntity.currentScore + 0.5
-                val singleContent = knowledgeAbilityEntity.currentScore < knowledgeAbilityEntity.targetScore
-                val question = questionServiceClient.fetchQuestion(focus.outlineId!!, minDifficulty, maxDifficulty, singleContent)
-                val practiceEntity = StudentPracticeEntity(
-                    studentId = studentId,
-                    subContentId = focus.id,
-                    questionId = question.id,
-                    questionBody = question.body,
-                    questionOptions = question.option.map {
-                        QuestionOption(
-                            id = UUID.randomUUID().toString(),
-                            value = it.value,
-                            correct = it.correct
-                        )
-                    },
-                )
-                val result = studentPracticeRepository.save(practiceEntity)
-                return Practice.from(result)
-            }
+            val question = generateQuestion(focus, latestPracticeEntity, knowledgeAbilityEntity)
+            val isComprehensive = knowledgeAbilityEntity.currentScore >= knowledgeAbilityEntity.targetScore
+            val practiceEntity = StudentPracticeEntity(
+                studentId = studentId,
+                subContentId = focus.id,
+                questionId = question.id,
+                questionBody = question.body,
+                questionOptions = question.option.map {
+                    QuestionOption(
+                        id = UUID.randomUUID().toString(),
+                        value = it.value,
+                        correct = it.correct
+                    )
+                },
+                isComprehensive = isComprehensive
+            )
+            val result = studentPracticeRepository.save(practiceEntity)
+            return Practice.from(result)
+        }
+    }
+
+    private fun generateQuestion(focus: KnowledgePoint, latestPracticeEntity: StudentPracticeEntity?, knowledgeAbilityEntity: StudentKnowledgeAbilityEntity): Question {
+        val previousPracticeCorrect = latestPracticeEntity == null || latestPracticeEntity.questionCorrect!!
+        if (knowledgeAbilityEntity.currentScore >= knowledgeAbilityEntity.targetScore) {
+            //综合知识
+            val question = questionServiceClient.fetchComprehensiveQuestion(focus.name)
+            return question
+        }
+
+        //单个content题目
+        if (previousPracticeCorrect) {
+            //当上述难度范围无法抽取时，扩展范围至X+1
+            val minDifficulty = knowledgeAbilityEntity.currentScore
+            val maxDifficulty = knowledgeAbilityEntity.currentScore + 0.5
+            val question = questionServiceClient.fetchSingleContentQuestion(focus.name, minDifficulty, maxDifficulty)
+            return question
         } else {
-            return Practice.from(latestPracticeEntity)
+            if (knowledgeAbilityEntity.currentScore < knowledgeAbilityEntity.baseScore ) {
+                throw PracticeException("The current ability score ${knowledgeAbilityEntity.currentScore} is less than the base ability score ${knowledgeAbilityEntity.baseScore}.")
+            }
+            //当上述难度范围无法抽取时，扩展范围至X+1
+            val minDifficulty = knowledgeAbilityEntity.currentScore - 0.5
+            val maxDifficulty = knowledgeAbilityEntity.currentScore
+            val question = questionServiceClient.fetchSingleContentQuestion(focus.name, minDifficulty, maxDifficulty)
+            return question
         }
     }
 

@@ -24,6 +24,7 @@ data class StudentPracticeEntity(
     var questionSelectedOptionId: String? = null,
     var questionCorrect: Boolean? = null,
     var questionSubmitted: Boolean = false,
+    var isComprehensive: Boolean = false,
     @CreationTimestamp
     val createdAt: LocalDateTime? = null,
     @UpdateTimestamp

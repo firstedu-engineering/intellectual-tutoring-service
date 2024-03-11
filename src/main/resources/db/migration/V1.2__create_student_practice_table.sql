@@ -8,6 +8,7 @@ CREATE TABLE `student_practice` (
   `question_options` JSON NOT NULL,
   `question_selected_option_id` char(36),
   `question_correct` TINYINT(1),
+  `is_comprehensive` TINYINT(1),
   `question_submitted` TINYINT(1) NOT NULL,
   `created_at`      TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`      TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
