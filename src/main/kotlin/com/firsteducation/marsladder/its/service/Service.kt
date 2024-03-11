@@ -1,7 +1,10 @@
 package com.firsteducation.marsladder.its.service
 
 import com.firsteducation.marsladder.its.client.QuestionServiceClient
+import com.firsteducation.marsladder.its.event.PracticeSubmittedEvent
 import com.firsteducation.marsladder.its.exception.BadRequestException
+import com.firsteducation.marsladder.its.repository.StudentKnowledgeAbilityAdjustmentDetailRepository
+import com.firsteducation.marsladder.its.repository.StudentKnowledgeAbilityAdjustmentRepository
 import com.firsteducation.marsladder.its.repository.StudentKnowledgeAbilityRepository
 import com.firsteducation.marsladder.its.repository.StudentPracticeRepository
 import com.firsteducation.marsladder.its.repository.entity.QuestionOption
@@ -16,6 +19,7 @@ import org.apache.tinkerpop.gremlin.driver.Cluster
 import org.apache.tinkerpop.gremlin.driver.remote.DriverRemoteConnection
 import org.apache.tinkerpop.gremlin.process.traversal.AnonymousTraversalSource
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
@@ -24,7 +28,10 @@ import java.util.*
 class Service(
     private val studentKnowledgeAbilityRepository: StudentKnowledgeAbilityRepository,
     private val studentPracticeRepository: StudentPracticeRepository,
-    private val questionServiceClient: QuestionServiceClient
+    private val questionServiceClient: QuestionServiceClient,
+    private val publisher: ApplicationEventPublisher,
+    private val studentKnowledgeAbilityAdjustmentRepository: StudentKnowledgeAbilityAdjustmentRepository,
+    private val studentKnowledgeAbilityAdjustmentDetailRepository: StudentKnowledgeAbilityAdjustmentDetailRepository,
 ) {
     private val initScore = 1.5
     private val targetScore = 2.0
@@ -53,7 +60,8 @@ class Service(
                 //当上述难度范围无法抽取时，扩展范围至X+1
                 val minDifficulty = knowledgeAbilityEntity.currentScore
                 val maxDifficulty = knowledgeAbilityEntity.currentScore + 0.5
-                val question = questionServiceClient.fetchQuestion(focus.outlineId!!, minDifficulty, maxDifficulty)
+                val singleContent = knowledgeAbilityEntity.currentScore < knowledgeAbilityEntity.targetScore
+                val question = questionServiceClient.fetchQuestion(focus.outlineId!!, minDifficulty, maxDifficulty, singleContent)
                 val practiceEntity = StudentPracticeEntity(
                     studentId = studentId,
                     subContentId = focus.id,
@@ -66,7 +74,6 @@ class Service(
                             correct = it.correct
                         )
                     },
-                    questionRecommendedReason = "Fetch a question from content: ${focus.name}, difficulty is between $minDifficulty and $maxDifficulty."
                 )
                 val result = studentPracticeRepository.save(practiceEntity)
                 return Practice.from(result)
@@ -76,6 +83,7 @@ class Service(
         }
     }
 
+    @Transactional
     fun submitPractice(studentId: String, practiceId: String, optionId: String) {
         val practiceEntity = studentPracticeRepository.findByStudentIdAndId(studentId, practiceId)
             ?: throw PracticeNotFoundException("Practice not found: practiceId: $practiceId, studentId: $studentId")
@@ -89,6 +97,13 @@ class Service(
         practiceEntity.questionCorrect = practiceEntity.questionOptions.first { it.id == optionId }.correct
         practiceEntity.questionSelectedOptionId = optionId
         studentPracticeRepository.save(practiceEntity)
+
+        publisher.publishEvent(
+            PracticeSubmittedEvent(
+                source = this,
+                practiceId = practiceEntity.id!!,
+            ),
+        )
     }
 
     @Transactional
@@ -107,6 +122,14 @@ class Service(
                 )
             }
         studentKnowledgeAbilityRepository.saveAll(studentKnowledgeAbilityEntities)
+    }
+
+    fun adjustKnowledgeAbility(practiceId: String) {
+
+    }
+
+    fun adjustFocus() {
+
     }
 
     private fun connectToDatabase(): Cluster {

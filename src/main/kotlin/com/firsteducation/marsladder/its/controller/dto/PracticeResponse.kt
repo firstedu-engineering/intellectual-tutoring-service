@@ -8,7 +8,6 @@ data class PracticeResponse(
     val questionBody: String,
     val questionOptions: List<QuestionOptionResponse>,
     val subContentId: String,
-    val questionRecommendedReason: String,
 ) {
     companion object {
         fun from(practice: Practice): PracticeResponse =
@@ -22,7 +21,6 @@ data class PracticeResponse(
                         value = it.value
                     )
                 },
-                questionRecommendedReason = practice.questionRecommendedReason,
                 subContentId = practice.subContentId
             )
 

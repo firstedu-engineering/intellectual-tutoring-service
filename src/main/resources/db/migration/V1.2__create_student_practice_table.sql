@@ -9,7 +9,6 @@ CREATE TABLE `student_practice` (
   `question_selected_option_id` char(36),
   `question_correct` TINYINT(1),
   `question_submitted` TINYINT(1) NOT NULL,
-  `question_recommended_reason` varchar(200),
   `created_at`      TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`      TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)

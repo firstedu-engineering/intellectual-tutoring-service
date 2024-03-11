@@ -8,8 +8,7 @@ data class Practice(
     val questionId: String,
     val questionBody: String,
     val questionOption: List<QuestionOption>,
-    val subContentId: String,
-    val questionRecommendedReason: String,
+    val subContentId: String
 ) {
     companion object {
         fun from(studentPracticeEntity: StudentPracticeEntity): Practice =
@@ -19,7 +18,6 @@ data class Practice(
                 subContentId = studentPracticeEntity.subContentId,
                 questionBody = studentPracticeEntity.questionBody,
                 questionOption = studentPracticeEntity.questionOptions,
-                questionRecommendedReason = studentPracticeEntity.questionRecommendedReason,
             )
     }
 }

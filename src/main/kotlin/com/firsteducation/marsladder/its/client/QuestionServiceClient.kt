@@ -4,6 +4,7 @@ import com.firsteducation.marsladder.its.client.domain.Option
 import com.firsteducation.marsladder.its.client.domain.Question
 import org.springframework.stereotype.Service
 import java.util.*
+import kotlin.math.min
 
 @Service
 class QuestionServiceClient {
@@ -30,13 +31,18 @@ class QuestionServiceClient {
         ),
     )
 
-    fun fetchQuestion(contentId: String, minDifficulty: Double, maxDifficulty: Double): Question {
+    fun fetchQuestion(contentId: String, minDifficulty: Double, maxDifficulty: Double, singleContent: Boolean): Question {
+        var body = "The difficulty is between $minDifficulty and $maxDifficulty. "
+        if(singleContent) {
+            body += "Pick question with single content tag: $contentId."
+        } else {
+            body += "Pick question that has content tag: $contentId."
+        }
         return Question(
             id = UUID.randomUUID().toString(),
-            body = "this is body",
+            body = body,
             option = option
         )
-
     }
 
     fun fetchQuestionByQuestionId(questionId: String): Question {
