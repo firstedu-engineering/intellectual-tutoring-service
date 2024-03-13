@@ -8,6 +8,7 @@ data class Practice(
     val questionId: String,
     val questionBody: String,
     val questionOption: List<QuestionOption>,
+    val questionDifficulty: Double,
     val subContentId: String
 ) {
     companion object {
@@ -17,6 +18,7 @@ data class Practice(
                 questionId = studentPracticeEntity.questionId,
                 subContentId = studentPracticeEntity.subContentId,
                 questionBody = studentPracticeEntity.questionBody,
+                questionDifficulty = studentPracticeEntity.questionDifficulty,
                 questionOption = studentPracticeEntity.questionOptions,
             )
     }

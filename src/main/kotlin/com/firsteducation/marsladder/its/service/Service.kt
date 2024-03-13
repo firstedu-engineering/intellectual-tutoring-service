@@ -4,13 +4,8 @@ import com.firsteducation.marsladder.its.client.QuestionServiceClient
 import com.firsteducation.marsladder.its.client.domain.Question
 import com.firsteducation.marsladder.its.event.PracticeSubmittedEvent
 import com.firsteducation.marsladder.its.exception.BadRequestException
-import com.firsteducation.marsladder.its.repository.StudentKnowledgeAbilityAdjustmentDetailRepository
-import com.firsteducation.marsladder.its.repository.StudentKnowledgeAbilityAdjustmentRepository
-import com.firsteducation.marsladder.its.repository.StudentKnowledgeAbilityRepository
-import com.firsteducation.marsladder.its.repository.StudentPracticeRepository
-import com.firsteducation.marsladder.its.repository.entity.QuestionOption
-import com.firsteducation.marsladder.its.repository.entity.StudentKnowledgeAbilityEntity
-import com.firsteducation.marsladder.its.repository.entity.StudentPracticeEntity
+import com.firsteducation.marsladder.its.repository.*
+import com.firsteducation.marsladder.its.repository.entity.*
 import com.firsteducation.marsladder.its.service.domain.KnowledgePoint
 import com.firsteducation.marsladder.its.service.domain.Practice
 import com.firsteducation.marsladder.its.service.exception.PracticeException
@@ -24,6 +19,7 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.*
+import kotlin.math.abs
 
 @Service
 class Service(
@@ -33,30 +29,29 @@ class Service(
     private val publisher: ApplicationEventPublisher,
     private val studentKnowledgeAbilityAdjustmentRepository: StudentKnowledgeAbilityAdjustmentRepository,
     private val studentKnowledgeAbilityAdjustmentDetailRepository: StudentKnowledgeAbilityAdjustmentDetailRepository,
+    private val studentFocusRepository: StudentFocusRepository,
+    private val knowledgePointRepository: KnowledgePointRepository,
+    private val preKnowledgeRelationRepository: PreKnowledgeRelationRepository
 ) {
     private val initScore = 1.5
     private val targetScore = 2.0
     private val baseScore = 1.0
 
-    fun getFocus(studentId: String): KnowledgePoint {
-        val g = getGraphTraversalSource()
-        val focus = g.V().has("student", "id", studentId).out("focus").values<String>().toList()
-        return KnowledgePoint(
-            name = focus[0],
-            outlineId = focus[1],
-            id = focus[2],
-            type = focus[3],
-        )
+    fun getFocusKnowledgePoint(studentId: String): KnowledgePoint {
+        val studentFocusEntity = studentFocusRepository.findByStudentId(studentId)
+            ?: throw PracticeException("Student $studentId do not focus on any knowledge point.")
+        return knowledgePointRepository.findById(studentFocusEntity.knowledgePointId)
+            .map { KnowledgePoint.from(it) }
+            .orElseThrow { PracticeException("No such knowledge point ${studentFocusEntity.knowledgePointId}") }
     }
 
     fun getPractice(studentId: String): Practice {
-        val focus = getFocus(studentId)
+        val focus = getFocusKnowledgePoint(studentId)
         val latestPracticeEntity = studentPracticeRepository.findFirstByStudentIdAndSubContentIdOrderByCreatedAtDesc(studentId, focus.id)
         if (latestPracticeEntity != null && !latestPracticeEntity.questionSubmitted) {
             return Practice.from(latestPracticeEntity)
         } else {
-            val knowledgeAbilityEntity = studentKnowledgeAbilityRepository.findByStudentIdAndSubContentId(studentId, focus.id)
-                ?: throw PracticeException("Student $studentId has no knowledge ability for sub_content: ${focus.name}")
+            val knowledgeAbilityEntity = getStudentKnowledgeAbility(studentId, focus.id)
             val question = generateQuestion(focus, latestPracticeEntity, knowledgeAbilityEntity)
             val isComprehensive = knowledgeAbilityEntity.currentScore >= knowledgeAbilityEntity.targetScore
             val practiceEntity = StudentPracticeEntity(
@@ -71,6 +66,7 @@ class Service(
                         correct = it.correct
                     )
                 },
+                questionDifficulty = question.difficulty,
                 isComprehensive = isComprehensive
             )
             val result = studentPracticeRepository.save(practiceEntity)
@@ -82,7 +78,9 @@ class Service(
         val previousPracticeCorrect = latestPracticeEntity == null || latestPracticeEntity.questionCorrect!!
         if (knowledgeAbilityEntity.currentScore >= knowledgeAbilityEntity.targetScore) {
             //综合知识
-            val question = questionServiceClient.fetchComprehensiveQuestion(focus.name)
+            val minDifficulty = knowledgeAbilityEntity.currentScore
+            val maxDifficulty = knowledgeAbilityEntity.currentScore + 0.5
+            val question = questionServiceClient.fetchComprehensiveQuestion(focus.name, minDifficulty, maxDifficulty)
             return question
         }
 
@@ -130,14 +128,13 @@ class Service(
 
     @Transactional
     fun initKnowledgeAbility(studentId: String) {
-        val g = getGraphTraversalSource()
-        val subContents = g.V().has("knowledge", "type", "sub_content").values<String>("id").toList()
+        val subContentEntities = knowledgePointRepository.findByType("sub_content")
         studentKnowledgeAbilityRepository.deleteByStudentId(studentId)
         val studentKnowledgeAbilityEntities =
-            subContents.map {
+            subContentEntities.map {
                 StudentKnowledgeAbilityEntity(
                     studentId = studentId,
-                    subContentId = it,
+                    subContentId = it.id!!,
                     currentScore = initScore,
                     targetScore = targetScore,
                     baseScore = baseScore,
@@ -146,13 +143,96 @@ class Service(
         studentKnowledgeAbilityRepository.saveAll(studentKnowledgeAbilityEntities)
     }
 
+    @Transactional
     fun adjustKnowledgeAbility(practiceId: String) {
+        val practice = studentPracticeRepository.findById(practiceId).orElseThrow{ PracticeNotFoundException("No such practice $practiceId") }
+        val focus = getFocusKnowledgePoint(practice.studentId)
+        val knowledgeAbilityEntity = getStudentKnowledgeAbility(practice.studentId, focus.id)
+        val focusKnowledgePointAdjustmentScore = if (practice.questionDifficulty >= knowledgeAbilityEntity.currentScore && practice.questionCorrect!!) {
+            maxOf((practice.questionDifficulty - knowledgeAbilityEntity.currentScore) * 0.7, 0.1)
+        } else if (practice.questionDifficulty < knowledgeAbilityEntity.currentScore && practice.questionCorrect!!) {
+            0.1
+        } else if (practice.questionDifficulty >= knowledgeAbilityEntity.currentScore && !practice.questionCorrect!!) {
+            -0.1
+        } else {
+            minOf((practice.questionDifficulty - knowledgeAbilityEntity.currentScore) * 0.7, -0.1)
+        }
+
+        val factor = 0.5
+        val adjustmentPlanMap = mutableMapOf<String, Double>() // key: sub_content_id, value: adjustment score
+        adjustmentPlanMap[focus.id] = focusKnowledgePointAdjustmentScore
+
+        var preKnowledgeRelations = preKnowledgeRelationRepository.findByKnowledgePointId(focus.id)
+
+        while(preKnowledgeRelations.isNotEmpty()) {
+            val needAdjustmentKnowledgePointIds = mutableListOf<String>()
+            preKnowledgeRelations.forEach { preKnowledgeRelation ->
+                val followingKnowledgePointAdjustmentScore = adjustmentPlanMap[preKnowledgeRelation.knowledgePointId]!!
+                val adjustmentScore = if (followingKnowledgePointAdjustmentScore < 0)
+                    followingKnowledgePointAdjustmentScore * preKnowledgeRelation.relevance * factor
+                else
+                    followingKnowledgePointAdjustmentScore * preKnowledgeRelation.relevance
+                if (adjustmentPlanMap[preKnowledgeRelation.preKnowledgePointId] == null && abs(adjustmentScore) >= 0.1) {
+                    adjustmentPlanMap[preKnowledgeRelation.preKnowledgePointId] = adjustmentScore
+                    needAdjustmentKnowledgePointIds.add(preKnowledgeRelation.preKnowledgePointId)
+                }
+            }
+            preKnowledgeRelations = preKnowledgeRelationRepository.findByKnowledgePointIdIn(needAdjustmentKnowledgePointIds)
+        }
+
+        var followingKnowledgeRelations = preKnowledgeRelationRepository.findByPreKnowledgePointId(focus.id)
+
+        while(followingKnowledgeRelations.isNotEmpty()) {
+            val needAdjustmentKnowledgePointIds = mutableListOf<String>()
+            followingKnowledgeRelations.forEach { followingKnowledgeRelation ->
+                val preKnowledgePointAdjustmentScore = adjustmentPlanMap[followingKnowledgeRelation.preKnowledgePointId]!!
+                val adjustmentScore = if (preKnowledgePointAdjustmentScore < 0)
+                    preKnowledgePointAdjustmentScore * followingKnowledgeRelation.relevance
+                else
+                    preKnowledgePointAdjustmentScore * followingKnowledgeRelation.relevance * factor
+                if (adjustmentPlanMap[followingKnowledgeRelation.knowledgePointId] == null && abs(adjustmentScore) >= 0.1) {
+                    adjustmentPlanMap[followingKnowledgeRelation.knowledgePointId] = adjustmentScore
+                    needAdjustmentKnowledgePointIds.add(followingKnowledgeRelation.knowledgePointId)
+                }
+            }
+            followingKnowledgeRelations = preKnowledgeRelationRepository.findByPreKnowledgePointIdIn(needAdjustmentKnowledgePointIds)
+        }
+
+        val adjustment = studentKnowledgeAbilityAdjustmentRepository.save(
+            StudentKnowledgeAbilityAdjustmentEntity(
+                studentId = practice.studentId,
+                practiceId = practice.id!!,
+                adjusted = true
+            )
+        )
+
+        adjustmentPlanMap.keys.forEach { subContentId ->
+            val studentKnowledgeAbilityEntity = getStudentKnowledgeAbility(practice.studentId, subContentId)
+            val before = studentKnowledgeAbilityEntity.currentScore
+            val after = before + adjustmentPlanMap[subContentId]!!
+
+            studentKnowledgeAbilityEntity.currentScore = after
+            studentKnowledgeAbilityRepository.save(studentKnowledgeAbilityEntity)
+
+            studentKnowledgeAbilityAdjustmentDetailRepository.save(
+                StudentKnowledgeAbilityAdjustmentDetailEntity(
+                    adjustmentId = adjustment.id!!,
+                    subContentId = subContentId,
+                    before = before,
+                    after = after
+                )
+            )
+        }
+    }
+
+    @Transactional
+    fun adjustFocus(practiceId: String) {
 
     }
 
-    fun adjustFocus() {
-
-    }
+    private fun getStudentKnowledgeAbility(studentId: String, knowledgePointId: String): StudentKnowledgeAbilityEntity =
+        studentKnowledgeAbilityRepository.findByStudentIdAndSubContentId(studentId, knowledgePointId)
+            ?: throw PracticeException("Student $studentId has no knowledge ability for sub_content: $knowledgePointId")
 
     private fun connectToDatabase(): Cluster {
         val builder: Cluster.Builder = Cluster.build()

@@ -13,4 +13,4 @@ spring:
     repeatable-sql-migration-prefix: R
     sql-migration-separator: __
     sql-migration-suffixes: .sql
-    locations: classpath:/db/migration
+    locations: classpath:/db/migration,/db/testdata

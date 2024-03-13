@@ -6,17 +6,14 @@ import org.hibernate.annotations.GenericGenerator
 import org.hibernate.annotations.UpdateTimestamp
 import java.time.LocalDateTime
 
-@Entity(name = "student_knowledge_ability")
-data class StudentKnowledgeAbilityEntity(
+@Entity(name = "student_focus")
+data class StudentFocusEntity(
     @Id
     @GeneratedValue(generator = "uuid")
     @GenericGenerator(name = "uuid", strategy = "uuid2")
     var id: String? = null,
     val studentId: String,
-    val subContentId: String,
-    var currentScore: Double,
-    val targetScore: Double,
-    val baseScore: Double,
+    val knowledgePointId: String,
     @CreationTimestamp
     val createdAt: LocalDateTime? = null,
     @UpdateTimestamp

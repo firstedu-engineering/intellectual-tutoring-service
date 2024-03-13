@@ -18,7 +18,7 @@ class EventListener(
             "[PracticeSubmittedEvent Received]: practiceId: [${event.practiceId}]",
         )
         service.adjustKnowledgeAbility(event.practiceId)
-        service.adjustFocus()
+        service.adjustFocus(event.practiceId)
     }
 
 }

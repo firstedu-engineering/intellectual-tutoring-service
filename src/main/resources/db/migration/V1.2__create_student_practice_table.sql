@@ -6,6 +6,7 @@ CREATE TABLE `student_practice` (
   `question_id` char(36) NOT NULL,
   `question_body` text NOT NULL,
   `question_options` JSON NOT NULL,
+  `question_difficulty` decimal(6,2) NOT NULL,
   `question_selected_option_id` char(36),
   `question_correct` TINYINT(1),
   `is_comprehensive` TINYINT(1),

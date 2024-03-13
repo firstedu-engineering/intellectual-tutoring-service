@@ -21,6 +21,7 @@ data class StudentPracticeEntity(
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "json")
     val questionOptions: List<QuestionOption>,
+    val questionDifficulty: Double,
     var questionSelectedOptionId: String? = null,
     var questionCorrect: Boolean? = null,
     var questionSubmitted: Boolean = false,

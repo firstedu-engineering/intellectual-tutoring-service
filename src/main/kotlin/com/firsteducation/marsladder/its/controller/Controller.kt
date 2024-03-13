@@ -15,7 +15,7 @@ class Controller(private val service: Service) {
     @GetMapping("focus")
     fun getFocus(): ResponseEntity<KnowledgePoint> {
         return ResponseEntity.status(HttpStatus.OK).body(
-            service.getFocus(studentId),
+            service.getFocusKnowledgePoint(studentId),
         )
     }
 
