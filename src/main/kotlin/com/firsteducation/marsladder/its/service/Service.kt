@@ -2,7 +2,6 @@ package com.firsteducation.marsladder.its.service
 
 import com.firsteducation.marsladder.its.client.QuestionServiceClient
 import com.firsteducation.marsladder.its.client.domain.Question
-import com.firsteducation.marsladder.its.event.PracticeSubmittedEvent
 import com.firsteducation.marsladder.its.exception.BadRequestException
 import com.firsteducation.marsladder.its.repository.*
 import com.firsteducation.marsladder.its.repository.entity.*
@@ -45,7 +44,7 @@ class Service(
             .orElseThrow { PracticeException("No such knowledge point ${studentFocusEntity.knowledgePointId}") }
     }
 
-    fun getPractice(studentId: String): Practice {
+    fun generatePractice(studentId: String): Practice {
         val focus = getFocusKnowledgePoint(studentId)
         val latestPracticeEntity = studentPracticeRepository.findFirstByStudentIdAndSubContentIdOrderByCreatedAtDesc(studentId, focus.id)
         if (latestPracticeEntity != null && !latestPracticeEntity.questionSubmitted) {
@@ -92,9 +91,6 @@ class Service(
             val question = questionServiceClient.fetchSingleContentQuestion(focus.name, minDifficulty, maxDifficulty)
             return question
         } else {
-            if (knowledgeAbilityEntity.currentScore < knowledgeAbilityEntity.baseScore ) {
-                throw PracticeException("The current ability score ${knowledgeAbilityEntity.currentScore} is less than the base ability score ${knowledgeAbilityEntity.baseScore}.")
-            }
             //当上述难度范围无法抽取时，扩展范围至X+1
             val minDifficulty = knowledgeAbilityEntity.currentScore - 0.5
             val maxDifficulty = knowledgeAbilityEntity.currentScore
@@ -104,9 +100,8 @@ class Service(
     }
 
     @Transactional
-    fun submitPractice(studentId: String, practiceId: String, optionId: String) {
-        val practiceEntity = studentPracticeRepository.findByStudentIdAndId(studentId, practiceId)
-            ?: throw PracticeNotFoundException("Practice not found: practiceId: $practiceId, studentId: $studentId")
+    fun submitPractice(studentId: String, practiceId: String, optionId: String): String {
+        val practiceEntity = getPractice(studentId, practiceId)
         if (!practiceEntity.questionOptions.map { it.id }.contains(optionId)) {
             throw PracticeOptionNotFoundException("No such option id $optionId in practice $practiceId.")
         }
@@ -124,8 +119,12 @@ class Service(
 //                practiceId = practiceEntity.id!!,
 //            ),
 //        )
-
-        adjustKnowledgeAbility(practiceId)
+        val result = if (practiceEntity.questionCorrect!!) "correct" else "not correct"
+        var desc = "Practice is $result. "
+        val focus = getFocusKnowledgePoint(practiceEntity.studentId)
+        desc += "\n" + adjustKnowledgeAbility(practiceEntity, focus)
+        desc += "\n" + adjustFocus(practiceEntity, focus)
+        return desc
     }
 
     @Transactional
@@ -146,9 +145,7 @@ class Service(
     }
 
     @Transactional
-    fun adjustKnowledgeAbility(practiceId: String) {
-        val practice = studentPracticeRepository.findById(practiceId).orElseThrow{ PracticeNotFoundException("No such practice $practiceId") }
-        val focus = getFocusKnowledgePoint(practice.studentId)
+    fun adjustKnowledgeAbility(practice: StudentPracticeEntity, focus: KnowledgePoint): String {
         val knowledgeAbilityEntity = getStudentKnowledgeAbility(practice.studentId, focus.id)
         val focusKnowledgePointAdjustmentScore = if (practice.questionDifficulty >= knowledgeAbilityEntity.currentScore && practice.questionCorrect!!) {
             maxOf((practice.questionDifficulty - knowledgeAbilityEntity.currentScore) * 0.7, 0.1)
@@ -163,6 +160,7 @@ class Service(
         val factor = 0.5
         val adjustmentPlanMap = mutableMapOf<String, Double>() // key: sub_content_id, value: adjustment score
         adjustmentPlanMap[focus.id] = focusKnowledgePointAdjustmentScore
+        val result = "Adjust [${focus.name}] ability score by $focusKnowledgePointAdjustmentScore"
 
         var preKnowledgeRelations = preKnowledgeRelationRepository.findByKnowledgePointId(focus.id)
 
@@ -225,12 +223,26 @@ class Service(
                 )
             )
         }
+        return result
     }
 
     @Transactional
-    fun adjustFocus(practiceId: String) {
-
+    fun adjustFocus(practice: StudentPracticeEntity, focus: KnowledgePoint): String {
+        val knowledgeAbilityEntity = getStudentKnowledgeAbility(practice.studentId, focus.id)
+        var result = "Current ability score: ${knowledgeAbilityEntity.currentScore}. Target score: ${knowledgeAbilityEntity.targetScore}. Base Score: ${knowledgeAbilityEntity.baseScore}. "
+        if (knowledgeAbilityEntity.currentScore > knowledgeAbilityEntity.targetScore + 0.5) {
+            result += "Change focus to next knowledge point."
+        } else if (knowledgeAbilityEntity.currentScore < knowledgeAbilityEntity.baseScore - 0.5) {
+            result += "Change focus to previous knowledge point."
+        } else {
+            result += "No need to change focus"
+        }
+        return result
     }
+
+    private fun getPractice(studentId: String, practiceId: String): StudentPracticeEntity =
+        studentPracticeRepository.findByStudentIdAndId(studentId, practiceId)
+            ?: throw PracticeNotFoundException("Student $studentId have no such practice $practiceId")
 
     private fun getStudentKnowledgeAbility(studentId: String, knowledgePointId: String): StudentKnowledgeAbilityEntity =
         studentKnowledgeAbilityRepository.findByStudentIdAndSubContentId(studentId, knowledgePointId)

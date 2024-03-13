@@ -17,8 +17,6 @@ class EventListener(
         logger.info(
             "[PracticeSubmittedEvent Received]: practiceId: [${event.practiceId}]",
         )
-        service.adjustKnowledgeAbility(event.practiceId)
-        service.adjustFocus(event.practiceId)
     }
 
 }

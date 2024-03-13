@@ -29,15 +29,16 @@ class Controller(private val service: Service) {
 
     @GetMapping("practice")
     fun practice(): ResponseEntity<PracticeResponse> {
-        val practice = service.getPractice(studentId)
+        val practice = service.generatePractice(studentId)
         return ResponseEntity.status(HttpStatus.OK).body(
             PracticeResponse.from(practice)
         )
     }
 
     @PostMapping("submit-practice")
-    fun submitPractice(@RequestBody submitPracticeRequest: SubmitPracticeRequest): ResponseEntity<Void> {
-        service.submitPractice(studentId = studentId, practiceId = submitPracticeRequest.practiceId, optionId = submitPracticeRequest.optionId)
-        return ResponseEntity.ok().build()
+    fun submitPractice(@RequestBody submitPracticeRequest: SubmitPracticeRequest): ResponseEntity<String> {
+        return ResponseEntity.status(HttpStatus.OK).body(
+            service.submitPractice(studentId = studentId, practiceId = submitPracticeRequest.practiceId, optionId = submitPracticeRequest.optionId)
+        )
     }
 }
