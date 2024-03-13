@@ -118,12 +118,14 @@ class Service(
         practiceEntity.questionSelectedOptionId = optionId
         studentPracticeRepository.save(practiceEntity)
 
-        publisher.publishEvent(
-            PracticeSubmittedEvent(
-                source = this,
-                practiceId = practiceEntity.id!!,
-            ),
-        )
+//        publisher.publishEvent(
+//            PracticeSubmittedEvent(
+//                source = this,
+//                practiceId = practiceEntity.id!!,
+//            ),
+//        )
+
+        adjustKnowledgeAbility(practiceId)
     }
 
     @Transactional
@@ -218,8 +220,8 @@ class Service(
                 StudentKnowledgeAbilityAdjustmentDetailEntity(
                     adjustmentId = adjustment.id!!,
                     subContentId = subContentId,
-                    before = before,
-                    after = after
+                    beforeAdjustmentScore = before,
+                    afterAdjustmentScore = after
                 )
             )
         }

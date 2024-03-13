@@ -7,7 +7,8 @@ spring:
     password: 123456
     hikari:
       maximum-pool-size: 30
-
+  jpa:
+    show-sql: true
   flyway:
     sql-migration-prefix: V
     repeatable-sql-migration-prefix: R

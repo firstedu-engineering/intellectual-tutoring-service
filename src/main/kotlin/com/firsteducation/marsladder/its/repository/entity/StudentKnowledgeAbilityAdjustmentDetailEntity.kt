@@ -14,8 +14,8 @@ data class StudentKnowledgeAbilityAdjustmentDetailEntity(
     var id: String? = null,
     val adjustmentId: String,
     val subContentId: String,
-    val before: Double,
-    val after: Double,
+    val beforeAdjustmentScore: Double,
+    val afterAdjustmentScore: Double,
     @CreationTimestamp
     val createdAt: LocalDateTime? = null,
     @UpdateTimestamp
